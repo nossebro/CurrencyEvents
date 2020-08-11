@@ -15,11 +15,11 @@ from WebSocketSharp import WebSocket
 #---------------------------------------
 #   [Required] Script Information
 #---------------------------------------
-ScriptName = "SocketReceiver"
-Website = "https://github.com/nossebro/SocketReceiver"
+ScriptName = "CurrencyEvents"
+Website = "https://github.com/nossebro/CurrencyEvents"
 Creator = "nossebro"
 Version = "0.0.1"
-Description = "Read events from the local SLCB socket"
+Description = "Add StreamLabs Currency to Users when Events are received on the local SLCB socket"
 
 #---------------------------------------
 #   Script Variables
@@ -254,5 +254,90 @@ def LocalSocketEvent(ws, data):
 			global LocalSocketIsConnected
 			LocalSocketIsConnected = True
 			Logger.info(event["data"]["message"])
+		# Twitch Cheer
+		elif event["event"] == "EVENT_CHEER":
+			Points = int(round(float(event["data"]["bits"]) * (float(ScriptSettings.TwitchBits) / 100)))
+			Name = event["data"]["display_name"]
+			BlackList = [ "ananonymouscheerer", "streamelements", "streamlabs", "stay_hydrated_bot", ScriptSettings.Blacklist.split(",") ]
+			# Give points to a random active user if the cheerer is anonymous
+			if Name.lower() == "ananonymouscheerer":
+				while Name.lower() in BlackList:
+					try:
+						Name = Parent.GetDisplayName(Parent.GetRandomActiveUser())
+					except:
+						Name = ScriptSettings.StreamerName
+						break
+				if Points > 0:
+					Parent.SendStreamMessage(ScriptSettings.TwitchAnonBits.format(Name, event["data"]["bits"], Points))
+					Parent.AddPoints(Name.lower(), Name, Points)
+				Logger.debug("Anonymous cheered {1} bits, adding {2} points to {0}".format(Name, event["data"]["bits"], Points))
+			else:
+				if Points > 0:
+					Parent.SendStreamMessage(ScriptSettings.TwitchBitsMessage.format(Name, event["data"]["bits"], Points))
+					Parent.AddPoints(Name.lower(), Name, Points)
+				Logger.debug("{0} cheered {1} bits, adding {2} points".format(Name, event["data"]["bits"], Points))
+		# Twitch Follow
+		elif event["event"] == "EVENT_FOLLOW":
+			Points = ScriptSettings.TwitchFollow
+			if Points > 0:
+				Parent.SendStreamMessage(ScriptSettings.TwitchFollowMessage.format(event["data"]["display_name"], Points))
+				Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
+			Logger.debug("{0} followed, adding {1} points".format(event["data"]["display_name"], Points))
+		# Twitch Host
+		elif event["event"] == "EVENT_HOST":
+			Points = event["data"]["viewers"] * ScriptSettings.TwitchHost
+			if Points > 0:
+				Parent.SendStreamMessage(ScriptSettings.TwitchHostMessage.format(event["data"]["name"], event["data"]["viewers"], Points))
+				Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
+			Logger.debug("{0} hosted with {1} viewers, adding {2} points".format(event["data"]["name"], event["data"]["viewers"], Points))
+		# Twitch Subscription
+		elif event["event"] == "EVENT_SUB":
+			if event["data"]["tier"] == "2":
+				Points = ScriptSettings.TwitchTierTwo
+			if event["data"]["tier"] == "3":
+				Points = ScriptSettings.TwitchTierThree
+			else:
+				Points = ScriptSettings.TwitchTierOne
+			if event["data"]["is_gift"]:
+				# Split points between gifter/giftee according to settings, except when gifter is anonymous, bot or streamer.
+				SubGifter = int(round(float(Points) * float(ScriptSettings.TwitchSubGifter / 100)))
+				SubTarget = int(round(float(Points) * float(ScriptSettings.TwitchSubTarget / 100)))
+				if event["data"]["name"] not in { ScriptSettings.StreamerName.lower(), "anonymous" }:
+					if SubGifter > 0:
+						# {0} gifted {1} a subscription, adding {2} amount of currency for {0}
+						Parent.SendStreamMessage(ScriptSettings.SubGiftMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
+						Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], SubGifter)
+						Logger.debug("{0} gifted {1} a subscription, adding {2} points for {0}".format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
+					if SubTarget > 0:
+						# {0} gifted {1} a subscription, adding {2} amount of currency for {1}
+						Parent.SendStreamMessage(ScriptSettings.SubTargetMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget))
+						Parent.AddPoints(event["data"]["gift_target"], Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget)
+						Logger.debug("{0} was gifted a subscription, adding {1} points for {0}".format(Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget))
+				# Subscription is an anonymous gift, or made by streamer. All points to giftee.
+				else:
+					if SubGifter > 0:
+						Parent.SendStreamMessage(ScriptSettings.SubTargetMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
+						Parent.AddPoints(event["data"]["gift_target"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter)
+					Logger.debug("{0} gifted {1} a subscription, adding {2} points for {1}".format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
+			else:
+				if Points > 0:
+					Parent.SendStreamMessage(ScriptSettings.SubMessage.format(event["data"]["display_name"], Points))
+					Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
+				Logger.debug("{0} subscribed, adding {1} points".format(event["data"]["display_name"], Points))
+		# Strealabs Donation
+		elif event["event"] == "EVENT_DONATION":
+			Points = int(round(float(event["data"]["amount"]) * float(ScriptSettings.Donation)))
+			if Points > 0:
+				Parent.SendStreamMessage(ScriptSettings.DonationMessage.format(event["data"]["display_name"], float(event["data"]["amount"]), event["data"]["currency"], Points))
+				Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
+			Logger.debug("{0} donated {1} {2}, adding {3} points".format(event["data"]["display_name"], float(event["data"]["amount"]), event["data"]["currency"], Points))
+		# Twitch Channel Points
+		elif event["event"] == "TWITCH_REWARD_V1":
+			Points = int(round(float(event["data"]["cost"]) * (float(ScriptSettings.TwitchChannelPoints) / 100)))
+			if Points > 0:
+				# {0} redeemed {1} channel points, adding {2} amount of currency
+				Parent.SendStreamMessage(ScriptSettings.TwitchChannelPointsMessage.format(event["data"]["display_name"], event["data"]["cost"], Points))
+				Parent.AddPoints(event["data"]["user_name"], event["data"]["display_name"], Points)
+			Logger.debug("{0} redeemed {1} channel points, adding {2} amount of currency".format(event["data"]["display_name"], vent["data"]["cost"], Points))
 		else:
 			Logger.warning("Unhandled event: {0}: {1}".format(event["event"], event["data"]))

@@ -8,8 +8,153 @@
 	},
 	"Events": {
 		"type": "textbox",
-		"value": "STREAMLABS,TWITCHPUBSUB,TWITCHTMI",
+		"value": "EVENT_CHEER,EVENT_DONATION,EVENT_FOLLOW,EVENT_HOST,EVENT_SUB,TWITCH_REWARD_V1",
 		"label": "Events",
 		"tooltip": "Events to listen to"
+	},
+	"StreamerName": {
+		"type": "textbox",
+		"value": "",
+		"label": "Streamer Name",
+		"tooltip": "Insert your Twitch display name."
+	},
+	"Blacklist": {
+		"type": "textbox",
+		"value": "",
+		"label": "Blacklist",
+		"tooltip": "Comma separated list of users not to give currency to."
+	},
+	"TwitchTierOne": {
+		"type": "numberbox",
+		"value": 499,
+		"label": "Tier 1",
+		"tooltip": "Amount of currency given for a Tier 1/Prime sub.",
+		"group": "Twitch"
+	},
+	"TwitchTierTwo": {
+		"type": "numberbox",
+		"value": 999,
+		"label": "Tier 2",
+		"tooltip": "Amount of currency given for a Tier 2 sub.",
+		"group": "Twitch"
+	},
+	"TwitchTierThree": {
+		"type": "numberbox",
+		"value": 2499,
+		"label": "Tier 3",
+		"tooltip": "Amount of currency given for a Tier 3 sub.",
+		"group": "Twitch"
+	},
+	"TwitchSubMessage": {
+		"type": "textbox",
+		"value": "{0} subscribed, adding {1} amount of currency",
+		"label": "Subscription message",
+		"tooltip": "Notification when user subscribes. {0} is replaced with user, {1} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchSubGifter": {
+		"type": "numberbox",
+		"value": 100,
+		"label": "Gifter multiplier",
+		"tooltip": "Percent of amount of currency for the gifter.",
+		"group": "Twitch"
+	},
+	"TwitchSubTarget": {
+		"type": "numberbox",
+		"value": 0,
+		"label": "Giftee multiplier",
+		"tooltip": "Percent of amount of currency for the giftee.",
+		"group": "Twitch"
+	},
+	"TwitchSubGiftMessage": {
+		"type": "textbox",
+		"value": "{0} gifted {1} a subscription, adding {2} amount of currency for {0}",
+		"label": "Gift Subscription message",
+		"tooltip": "Notification for gifter when gifting subscriptions {0} is replaced with gifter, {1} for gifter, {2} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchSubTargetMessage": {
+		"type": "textbox",
+		"value": "{0} gifted {1} a subscription, adding {2} amount of currency for {1}",
+		"label": "Subscription target message",
+		"tooltip": "Notification for gifter when gifting subscriptions ({0} is replaced with gifter, {1} for giftee, {2} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchBits": {
+		"type": "numberbox",
+		"value": 140,
+		"label": "Bits percentage",
+		"tooltip": "amount of currency in percent of bits. Default 140% (100 bits $1.40 USD",
+		"group": "Twitch"
+	},
+	"TwitchBitsMessage": {
+		"type": "textbox",
+		"value": "{0} cheered {1} bits, adding {2} amount of currency.",
+		"label": "Bits message",
+		"tooltip": "Notification when user donate bits. {0} is replaced with user, {1} with bits, {2} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchAnonBits": {
+		"type": "textbox",
+		"value": "Anonymous cheered {1} bits, adding {2} amount of currency to {0}",
+		"label": "Anonymous bits",
+		"tooltip": "Notification when anonymous donate bits. {0} is replaced with random user, {1} with bits, {2} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchFollow": {
+		"type": "numberbox",
+		"value": 0,
+		"label": "Follow",
+		"tooltip": "Amount of currency given for a follow. Leave at zero to disable",
+		"group": "Twitch"
+	},
+	"TwitchFollowMessage": {
+		"type": "textbox",
+		"value": "{0} followed, adding {1} amount of currency",
+		"label": "Follow message",
+		"tooltip": "Notification when someone follows. {0} is replaced with user, {1} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchHost": {
+		"type": "numberbox",
+		"value": 0,
+		"label": "Host",
+		"tooltip": "Amount of currency given per viewer for a host. Leave at zero to disable",
+		"group": "Twitch"
+	},
+	"TwitchHostMessage": {
+		"type": "textbox",
+		"value": "{0} hosted with {1} viewers, adding {2} amount of currency",
+		"label": "Host message",
+		"tooltip": "Notification when someone hosts. {0} is replaced with user, {1} with number of viewers, {2} with amount of currency",
+		"group": "Twitch"
+	},
+	"TwitchChannelPoints": {
+		"type": "numberbox",
+		"value": 50,
+		"label": "Channel points percentage",
+		"tooltip": "Percent of currency given for Channel Points. Set to zero to disable",
+		"group": "Twitch"
+	},
+	"TwitchChannelPointsMessage": {
+		"type": "textbox",
+		"value": "{0} redeemed {1} channel points, adding {2} amount of currency",
+		"label": "Host message",
+		"tooltip": "Notification when someone redeems channel points. {0} is replaced with user, {1} with channel points, {2} with amount of currency",
+		"group": "Twitch"
+	},
+	"StreamlabsDonation": {
+		"type": "numberbox",
+		"value": 100,
+		"label": "Donation multiplier",
+		"tooltip": "Multiplies donation cents with amount of currency.",
+		"group": "Streamlabs"
+	},
+	"StreamlabsDonationMessage": {
+		"type": "textbox",
+		"value": "{0} donated {1} {2}, adding {3} amount of currency",
+		"label": "Donation message",
+		"tooltip": "Notification when someone donates. {0} is replaced with user, {1} with value, {2} with currency, {3} with amount of currency",
+		"group": "Streamlabs"
 	}
 }
