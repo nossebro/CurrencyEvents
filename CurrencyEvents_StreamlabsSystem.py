@@ -333,11 +333,12 @@ def LocalSocketEvent(ws, data):
 			Logger.debug("{0} donated {1} {2}, adding {3} points".format(event["data"]["display_name"], float(event["data"]["amount"]), event["data"]["currency"], Points))
 		# Twitch Channel Points
 		elif event["event"] == "TWITCH_REWARD_V1":
-			Points = int(round(float(event["data"]["cost"]) * (float(ScriptSettings.TwitchChannelPoints) / 100)))
+			reward = json.loads(event["data"])
+			Points = int(round(float(reward["cost"]) * (float(ScriptSettings.TwitchChannelPoints) / 100)))
 			if Points > 0:
 				# {0} redeemed {1} channel points, adding {2} amount of currency
-				Parent.SendStreamMessage(ScriptSettings.TwitchChannelPointsMessage.format(event["data"]["display_name"], event["data"]["cost"], Points))
-				Parent.AddPoints(event["data"]["user_name"], event["data"]["display_name"], Points)
-			Logger.debug("{0} redeemed {1} channel points, adding {2} amount of currency".format(event["data"]["display_name"], vent["data"]["cost"], Points))
+				Parent.SendStreamMessage(ScriptSettings.TwitchChannelPointsMessage.format(reward["display_name"], reward["cost"], Points))
+				Parent.AddPoints(reward["user_name"], reward["display_name"], Points)
+			Logger.debug("{0} redeemed {1} channel points, adding {2} amount of currency".format(reward["display_name"], reward["cost"], Points))
 		else:
 			Logger.warning("Unhandled event: {0}: {1}".format(event["event"], event["data"]))
