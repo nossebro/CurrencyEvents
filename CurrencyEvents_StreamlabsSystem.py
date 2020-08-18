@@ -17,7 +17,7 @@ from WebSocketSharp import WebSocket
 ScriptName = "CurrencyEvents"
 Website = "https://github.com/nossebro/CurrencyEvents"
 Creator = "nossebro"
-Version = "0.0.3"
+Version = "0.0.4"
 Description = "Add StreamLabs Currency to Users when Events are received on the local SLCB socket"
 
 #---------------------------------------
@@ -152,14 +152,14 @@ def Init():
 #---------------------------------------
 def Unload():
 	global LocalSocket
-	global Logger
-	# Disconnect LocalSocket cleanly
 	if LocalSocket:
 		LocalSocket.Close(1000, "Program exit")
 		LocalSocket = None
 		Logger.debug("LocalSocket Disconnected")
+	global Logger
 	if Logger:
-		Logger.handlers.Clear()
+		for handler in Logger.handlers[:]:
+			Logger.removeHandler(handler)
 		Logger = None
 
 #---------------------------------------
