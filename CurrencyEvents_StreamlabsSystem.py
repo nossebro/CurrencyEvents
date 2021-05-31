@@ -269,7 +269,7 @@ def LocalSocketEvent(ws, data):
 				Logger.debug("{0} cheered {1} bits, adding {2} points".format(event["data"]["display_name"], event["data"]["bits"], Points))
 			else:
 				ActiveUsers = random.shuffle(Parent.GetActiveUsers()[:])
-				for x in ScriptSettings.Blacklist.split(",")
+				for x in ScriptSettings.Blacklist.split(","):
 					if x.lower() in ActiveUsers:
 						del ActiveUsers[x.lower()]
 				User = ActiveUsers.pop(0)
@@ -328,9 +328,9 @@ def LocalSocketEvent(ws, data):
 				Logger.debug("{0} subscribed, adding {1} points".format(event["data"]["display_name"], Points))
 		# Strealabs Donation
 		elif event["event"] == "EVENT_DONATION":
-			Points = int(round(float(event["data"]["amount"]) * float(ScriptSettings.Donation)))
+			Points = int(round(float(event["data"]["amount"]) * float(ScriptSettings.StreamlabsDonation)))
 			if Points > 0:
-				Parent.SendStreamMessage(ScriptSettings.DonationMessage.format(event["data"]["display_name"], float(event["data"]["amount"]), event["data"]["currency"], Points))
+				Parent.SendStreamMessage(ScriptSettings.StreamlabsDonationMessage.format(event["data"]["display_name"], float(event["data"]["amount"]), event["data"]["currency"], Points))
 				Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
 			Logger.debug("{0} donated {1} {2}, adding {3} points".format(event["data"]["display_name"], float(event["data"]["amount"]), event["data"]["currency"], Points))
 		# Twitch Channel Points
