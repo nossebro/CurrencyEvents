@@ -8,6 +8,7 @@ import re
 import os
 import codecs
 import json
+import random
 clr.AddReference("websocket-sharp.dll")
 from WebSocketSharp import WebSocket
 
@@ -17,7 +18,7 @@ from WebSocketSharp import WebSocket
 ScriptName = "CurrencyEvents"
 Website = "https://github.com/nossebro/CurrencyEvents"
 Creator = "nossebro"
-Version = "0.0.4"
+Version = "0.0.5"
 Description = "Add StreamLabs Currency to Users when Events are received on the local SLCB socket"
 
 #---------------------------------------
@@ -52,7 +53,7 @@ class Settings(object):
 		try:
 			with codecs.open(settingsfile, encoding="utf-8-sig", mode="r") as f:
 				settings = json.load(f, encoding="utf-8")
-			self.__dict__ = MergeLists(defaults, settings)
+			self.__dict__ = defaults.update(settings)
 		except:
 			self.__dict__ = defaults
 
@@ -69,7 +70,7 @@ class Settings(object):
 		return defaults
 
 	def Reload(self, jsondata):
-		self.__dict__ = MergeLists(self.DefaultSettings(UIConfigFile), json.loads(jsondata, encoding="utf-8"))
+		self.__dict__ = self.DefaultSettings(UIConfigFile).update(json.loads(jsondata, encoding="utf-8"))
 
 #---------------------------------------
 #   Script Functions
@@ -113,15 +114,6 @@ def GetAPIKey(apifile=None):
 		Logger.critical("API_Key.js is missing in script folder")
 	return API
 
-def MergeLists(x = dict(), y = dict()):
-	z = dict()
-	for attr in x:
-		if attr not in y:
-			z[attr] = x[attr]
-		else:
-			z[attr] = y[attr]
-	return z
-
 #---------------------------------------
 #   Chatbot Initialize Function
 #---------------------------------------
@@ -134,16 +126,13 @@ def Init():
 	global LocalSocket
 	global LocalAPI
 	LocalAPI = GetAPIKey(APIKeyFile)
-	LocalSocket = WebSocket(LocalAPI["Socket"])
-	LocalSocket.OnOpen += LocalSocketConnected
-	LocalSocket.OnClose += LocalSocketDisconnected
-	LocalSocket.OnMessage += LocalSocketEvent
-	LocalSocket.OnError += LocalSocketError
-
 	if all (keys in LocalAPI for keys in ("Key", "Socket")):
+		LocalSocket = WebSocket(LocalAPI["Socket"])
+		LocalSocket.OnOpen += LocalSocketConnected
+		LocalSocket.OnClose += LocalSocketDisconnected
+		LocalSocket.OnMessage += LocalSocketEvent
+		LocalSocket.OnError += LocalSocketError
 		LocalSocket.Connect()
-	else:
-		Logger.critical("API_Key.js missing from script folder")
 	
 	Parent.AddCooldown(ScriptName, "LocalSocket", 10)
 
@@ -187,7 +176,7 @@ def Execute(data):
 #---------------------------------------
 def Tick():
 	global LocalSocketIsConnected
-	if not Parent.IsOnCooldown(ScriptName, "LocalSocket") and not LocalSocketIsConnected and all (keys in LocalAPI for keys in ("Key", "Socket")):
+	if not Parent.IsOnCooldown(ScriptName, "LocalSocket") and LocalSocket and not LocalSocketIsConnected and all (keys in LocalAPI for keys in ("Key", "Socket")):
 		Logger.warning("No EVENT_CONNECTED received from LocalSocket, reconnecting")
 		try:
 			LocalSocket.Close(1006, "No connection confirmation received")
@@ -195,7 +184,7 @@ def Tick():
 			Logger.error("Could not close LocalSocket gracefully")
 		LocalSocket.Connect()
 		Parent.AddCooldown(ScriptName, "LocalSocket", 10)
-	if not Parent.IsOnCooldown(ScriptName, "LocalSocket") and not LocalSocket.IsAlive:
+	if not Parent.IsOnCooldown(ScriptName, "LocalSocket") and LocalSocket and not LocalSocket.IsAlive:
 		Logger.warning("LocalSocket seems dead, reconnecting")
 		try:
 			LocalSocket.Close(1006, "No connection")
@@ -254,27 +243,41 @@ def LocalSocketEvent(ws, data):
 			LocalSocketIsConnected = True
 			Logger.info(event["data"]["message"])
 		# Twitch Cheer
-		elif event["event"] == "EVENT_CHEER":
+		elif event["event"] == "TWITCH_BIT_V1":
 			Points = int(round(float(event["data"]["bits"]) * (float(ScriptSettings.TwitchBits) / 100)))
-			Name = event["data"]["display_name"]
-			BlackList = [ "ananonymouscheerer", "streamelements", "streamlabs", "stay_hydrated_bot", ScriptSettings.Blacklist.split(",") ]
-			# Give points to a random active user if the cheerer is anonymous
-			if Name.lower() == "ananonymouscheerer":
-				while Name.lower() in BlackList:
-					try:
-						Name = Parent.GetDisplayName(Parent.GetRandomActiveUser())
-					except:
-						Name = ScriptSettings.StreamerName
-						break
+			if event["data"]["is_anonymous"]:
+				ActiveUsers = random.shuffle(Parent.GetActiveUsers()[:])
+				for x in ScriptSettings.Blacklist.split(",")
+					if x.lower() in ActiveUsers:
+						del ActiveUsers[x.lower()]
+				User = ActiveUsers.pop(0)
 				if Points > 0:
 					Parent.SendStreamMessage(ScriptSettings.TwitchAnonBits.format(Name, event["data"]["bits"], Points))
-					Parent.AddPoints(Name.lower(), Name, Points)
+					Parent.AddPoints(User, Parent.GetDisplayName(User), Points)
 				Logger.debug("Anonymous cheered {1} bits, adding {2} points to {0}".format(Name, event["data"]["bits"], Points))
 			else:
 				if Points > 0:
-					Parent.SendStreamMessage(ScriptSettings.TwitchBitsMessage.format(Name, event["data"]["bits"], Points))
-					Parent.AddPoints(Name.lower(), Name, Points)
-				Logger.debug("{0} cheered {1} bits, adding {2} points".format(Name, event["data"]["bits"], Points))
+					Parent.SendStreamMessage(ScriptSettings.TwitchBitsMessage.format(event["data"]["display_name"], event["data"]["bits"], Points))
+					Parent.AddPoints(event["data"]["user_name"], event["data"]["display_name"], Points)
+				Logger.debug("{0} cheered {1} bits, adding {2} points".format(event["data"]["display_name"], event["data"]["bits"], Points))
+		elif event["event"] == "EVENT_CHEER":
+			Points = int(round(float(event["data"]["bits"]) * (float(ScriptSettings.TwitchBits) / 100)))
+			if event["data"]["name"]:
+				if Points > 0:
+					Parent.SendStreamMessage(ScriptSettings.TwitchBitsMessage.format(event["data"]["display_name"], event["data"]["bits"], Points))
+					Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
+				Logger.debug("{0} cheered {1} bits, adding {2} points".format(event["data"]["display_name"], event["data"]["bits"], Points))
+			else:
+				ActiveUsers = random.shuffle(Parent.GetActiveUsers()[:])
+				for x in ScriptSettings.Blacklist.split(",")
+					if x.lower() in ActiveUsers:
+						del ActiveUsers[x.lower()]
+				User = ActiveUsers.pop(0)
+				if Points > 0:
+					Parent.SendStreamMessage(ScriptSettings.TwitchAnonBits.format(Name, event["data"]["bits"], Points))
+					Parent.AddPoints(User, Parent.GetDisplayName(User), Points)
+				Logger.debug("Anonymous cheered {1} bits, adding {2} points to {0}".format(Name, event["data"]["bits"], Points))
+
 		# Twitch Follow
 		elif event["event"] == "EVENT_FOLLOW":
 			Points = ScriptSettings.TwitchFollow
@@ -301,26 +304,26 @@ def LocalSocketEvent(ws, data):
 				# Split points between gifter/giftee according to settings, except when gifter is anonymous, bot or streamer.
 				SubGifter = int(round(float(Points) * float(ScriptSettings.TwitchSubGifter / 100)))
 				SubTarget = int(round(float(Points) * float(ScriptSettings.TwitchSubTarget / 100)))
-				if event["data"]["name"] not in { ScriptSettings.StreamerName.lower(), "anonymous" }:
+				if event["data"]["name"].lower() not in { ScriptSettings.StreamerName.lower(), "anonymous" }:
 					if SubGifter > 0:
 						# {0} gifted {1} a subscription, adding {2} amount of currency for {0}
-						Parent.SendStreamMessage(ScriptSettings.SubGiftMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
+						Parent.SendStreamMessage(ScriptSettings.TwitchSubGiftMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
 						Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], SubGifter)
 						Logger.debug("{0} gifted {1} a subscription, adding {2} points for {0}".format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
 					if SubTarget > 0:
 						# {0} gifted {1} a subscription, adding {2} amount of currency for {1}
-						Parent.SendStreamMessage(ScriptSettings.SubTargetMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget))
+						Parent.SendStreamMessage(ScriptSettings.TwitchSubTargetMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget))
 						Parent.AddPoints(event["data"]["gift_target"], Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget)
 						Logger.debug("{0} was gifted a subscription, adding {1} points for {0}".format(Parent.GetDisplayName(event["data"]["gift_target"]), SubTarget))
 				# Subscription is an anonymous gift, or made by streamer. All points to giftee.
 				else:
 					if SubGifter > 0:
-						Parent.SendStreamMessage(ScriptSettings.SubTargetMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
+						Parent.SendStreamMessage(ScriptSettings.TwitchSubTargetMessage.format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
 						Parent.AddPoints(event["data"]["gift_target"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter)
 					Logger.debug("{0} gifted {1} a subscription, adding {2} points for {1}".format(event["data"]["display_name"], Parent.GetDisplayName(event["data"]["gift_target"]), SubGifter))
 			else:
 				if Points > 0:
-					Parent.SendStreamMessage(ScriptSettings.SubMessage.format(event["data"]["display_name"], Points))
+					Parent.SendStreamMessage(ScriptSettings.TwitchSubMessage.format(event["data"]["display_name"], Points))
 					Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
 				Logger.debug("{0} subscribed, adding {1} points".format(event["data"]["display_name"], Points))
 		# Strealabs Donation

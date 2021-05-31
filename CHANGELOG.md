@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.5 - Bugfixes
+
+* Fix messages
+
 ## 0.0.4 - Bugfixes
 
 * Fix unloading of logging framework

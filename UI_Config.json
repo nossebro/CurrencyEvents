@@ -20,7 +20,7 @@
 	},
 	"Blacklist": {
 		"type": "textbox",
-		"value": "",
+		"value": "streamelements,streamlabs,stay_hydrated_bot,fossabot,nightbot,moobot,coebot,wizebot,phantombot",
 		"label": "Blacklist",
 		"tooltip": "Comma separated list of users not to give currency to."
 	},
