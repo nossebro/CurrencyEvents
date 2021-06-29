@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.6 - Bugfixes
+
+* Fix stuff
+
 ## 0.0.5 - Bugfixes
 
 * Fix messages
