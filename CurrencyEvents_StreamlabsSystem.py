@@ -246,7 +246,7 @@ def LocalSocketEvent(ws, data):
 		# Twitch Cheer
 		elif event["event"] == "TWITCH_BIT_V1":
 			Points = int(round(float(event["data"]["bits"]) * (float(ScriptSettings.TwitchBits) / 100)))
-            if event["data"].get("is_anonymous", None):
+			if event["data"].get("is_anonymous", None):
 				ActiveUsers = random.shuffle(Parent.GetActiveUsers()[:])
 				for x in ScriptSettings.Blacklist.split(","):
 					if x.lower() in ActiveUsers:
