@@ -18,7 +18,7 @@ from WebSocketSharp import WebSocket
 ScriptName = "CurrencyEvents"
 Website = "https://github.com/nossebro/CurrencyEvents"
 Creator = "nossebro"
-Version = "0.0.6"
+Version = "0.0.7"
 Description = "Add StreamLabs Currency to Users when Events are received on the local SLCB socket"
 
 #---------------------------------------
@@ -326,6 +326,41 @@ def LocalSocketEvent(ws, data):
 				if Points > 0:
 					Parent.SendStreamMessage(ScriptSettings.TwitchSubMessage.format(event["data"]["display_name"], Points))
 					Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
+				Logger.debug("{0} subscribed, adding {1} points".format(event["data"]["display_name"], Points))
+		elif event["event"] == "TWITCH_SUB_V1":
+			if event["data"]["sub_plan"] == "2000":
+				Points = ScriptSettings.TwitchTierTwo
+			if event["data"]["sub_plan"] == "3000":
+				Points = ScriptSettings.TwitchTierThree
+			else:
+				Points = ScriptSettings.TwitchTierOne
+			if event["data"].get("multi_month_duration", None):
+				Points *= int(event["data"]["multi_month_duration"])
+			if event["data"].get("is_gift", None):
+				# Split points between gifter/giftee according to settings, except when gifter is anonymous, bot or streamer.
+				SubGifter = int(round(float(Points) * float(ScriptSettings.TwitchSubGifter / 100)))
+				SubTarget = int(round(float(Points) * float(ScriptSettings.TwitchSubTarget / 100)))
+				if event["data"]["user_name"] not in { ScriptSettings.StreamerName.lower(), "anonymous" }:
+					if SubGifter > 0:
+						# {0} gifted {1} a subscription, adding {2} amount of currency for {0}
+						Parent.SendStreamMessage(ScriptSettings.TwitchSubGiftMessage.format(event["data"]["display_name"], event["data"]["recipient_display_name"], SubGifter))
+						Parent.AddPoints(event["data"]["user_name"], event["data"]["display_name"], SubGifter)
+						Logger.debug("{0} gifted {1} a subscription, adding {2} points for {0}".format(event["data"]["display_name"], event["data"]["recipient_display_name"], SubGifter))
+					if SubTarget > 0:
+						# {0} gifted {1} a subscription, adding {2} amount of currency for {1}
+						Parent.SendStreamMessage(ScriptSettings.TwitchSubTargetMessage.format(event["data"]["display_name"], event["data"]["recipient_display_name"], SubTarget))
+						Parent.AddPoints(event["data"]["recipient_user_name"], event["data"]["recipient_display_name"], SubTarget)
+						Logger.debug("{0} was gifted a subscription, adding {1} points for {0}".format(event["data"]["recipient_display_name"], SubTarget))
+				# Subscription is an anonymous gift, or made by streamer. All points to giftee.
+				else:
+					if SubGifter > 0:
+						Parent.SendStreamMessage(ScriptSettings.TwitchSubTargetMessage.format(event["data"]["display_name"], event["data"]["recipient_display_name"], SubGifter))
+						Parent.AddPoints(event["data"]["recipient_user_name"], event["data"]["recipient_display_name"], SubGifter)
+					Logger.debug("{0} gifted {1} a subscription, adding {2} points for {1}".format(event["data"]["display_name"], event["data"]["recipient_display_name"], SubGifter))
+			else:
+				if Points > 0:
+					Parent.SendStreamMessage(ScriptSettings.TwitchSubMessage.format(event["data"]["display_name"], Points))
+					Parent.AddPoints(event["data"]["user_name"], event["data"]["display_name"], Points)
 				Logger.debug("{0} subscribed, adding {1} points".format(event["data"]["display_name"], Points))
 		# Strealabs Donation
 		elif event["event"] == "EVENT_DONATION":

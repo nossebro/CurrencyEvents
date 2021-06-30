@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.7 - New features
+
+* Add Twitch sub events
+
 ## 0.0.6 - Bugfixes
 
 * Fix stuff
