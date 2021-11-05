@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.8 - Bugfixes
+
+* Sub plan is int, not str
+
 ## 0.0.7 - New features
 
 * Add Twitch sub events

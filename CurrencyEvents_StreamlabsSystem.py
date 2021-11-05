@@ -18,7 +18,7 @@ from WebSocketSharp import WebSocket
 ScriptName = "CurrencyEvents"
 Website = "https://github.com/nossebro/CurrencyEvents"
 Creator = "nossebro"
-Version = "0.0.7"
+Version = "0.0.8"
 Description = "Add StreamLabs Currency to Users when Events are received on the local SLCB socket"
 
 #---------------------------------------
@@ -328,9 +328,9 @@ def LocalSocketEvent(ws, data):
 					Parent.AddPoints(event["data"]["name"], event["data"]["display_name"], Points)
 				Logger.debug("{0} subscribed, adding {1} points".format(event["data"]["display_name"], Points))
 		elif event["event"] == "TWITCH_SUB_V1":
-			if event["data"]["sub_plan"] == "2000":
+			if event["data"]["sub_plan"] == 2000:
 				Points = ScriptSettings.TwitchTierTwo
-			if event["data"]["sub_plan"] == "3000":
+			if event["data"]["sub_plan"] == 3000:
 				Points = ScriptSettings.TwitchTierThree
 			else:
 				Points = ScriptSettings.TwitchTierOne
